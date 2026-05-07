@@ -268,7 +268,7 @@ func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request
 		log.WithField("error", err).Warn("failed to get product recommendations")
 	}
 
-	// ignores the error retrieving FBT suggestions since it is not critical
+	// FBT suggestions are best-effort: a failure here should not fail the cart page
 	fbt, err := fe.getFrequentlyBoughtTogether(r.Context(), sessionID(r), cartIDs(cart))
 	if err != nil {
 		log.WithField("error", err).Warn("failed to get frequently bought together")
