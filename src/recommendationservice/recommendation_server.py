@@ -28,7 +28,7 @@ import grpc
 
 import demo_pb2
 import demo_pb2_grpc
-from fbt_data import COOCCURRENCE
+from fbt_cooccurrence import compute_fbt
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
@@ -87,11 +87,10 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
         return response
 
     def ListFrequentlyBoughtTogether(self, request, context):
-        max_results = request.max_results if request.max_results > 0 else 4
         cart_ids = list(request.product_ids)
 
-        # Pull recent cart history for this user, weighted lower than the
-        # current cart since older interest is a weaker signal.
+        # Pull recent cart history for this user; current cart is the
+        # strong signal, history personalizes for repeat shoppers.
         history_ids = []
         if request.user_id and cart_service_stub is not None:
             try:
@@ -101,28 +100,14 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
             except grpc.RpcError as e:
                 logger.warn("GetCartHistory failed, falling back to cart-only signal: {}".format(e))
 
-        seeds = [(pid, 1.0) for pid in cart_ids] + [(pid, 0.3) for pid in history_ids]
+        # Rank by aggregated lift over the seed cart. compute_fbt handles
+        # support/confidence/lift math against the seeded transaction
+        # history; we just give it seeds and excludes.
+        seeds = cart_ids + history_ids
+        ranked = compute_fbt(seeds, cart_ids, request.max_results)
 
-        # Aggregate scores per candidate product, plus the top contributing
-        # seed item so we can produce a human-readable reason.
-        scores = {}            # candidate_id -> aggregated score
-        counts = {}            # candidate_id -> raw cooccurrence count for the top contributor
-        top_contributor = {}   # candidate_id -> seed product_id that contributed most
-        for seed_id, weight in seeds:
-            for cand_id, count in COOCCURRENCE.get(seed_id, []):
-                if cand_id in cart_ids:
-                    continue
-                score = count * weight
-                scores[cand_id] = scores.get(cand_id, 0) + score
-                if score > counts.get(cand_id, -1):
-                    counts[cand_id] = count
-                    top_contributor[cand_id] = seed_id
-
-        ranked = sorted(scores.items(), key=lambda kv: kv[1], reverse=True)[:max_results]
-
-        # Resolve product names once for the contributors that appear in the
-        # response so we can include them in the reason text.
-        contributor_ids = {top_contributor[pid] for pid, _ in ranked}
+        # Resolve product names for the top contributors.
+        contributor_ids = {item["top_seed"] for item in ranked}
         names = {}
         for pid in contributor_ids:
             try:
@@ -132,12 +117,12 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
                 names[pid] = pid
 
         response = demo_pb2.FBTResponse()
-        for cand_id, _ in ranked:
-            contrib = top_contributor[cand_id]
+        for item in ranked:
+            seed_name = names.get(item["top_seed"], item["top_seed"])
             response.items.append(demo_pb2.FBTItem(
-                product_id=cand_id,
-                cooccurrence_count=counts[cand_id],
-                reason="Often bought with {}".format(names.get(contrib, contrib)),
+                product_id=item["product_id"],
+                cooccurrence_count=item["count"],
+                reason="Often bought with {} (lift {:.1f})".format(seed_name, item["lift"]),
             ))
         logger.info("[Recv ListFrequentlyBoughtTogether] cart={} history_len={} returned={}".format(
             cart_ids, len(history_ids), [i.product_id for i in response.items]))
