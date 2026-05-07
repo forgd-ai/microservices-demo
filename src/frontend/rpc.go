@@ -25,6 +25,10 @@ import (
 
 const (
 	avoidNoopCurrencyConversionRPC = false
+
+	// fbtPageSize is the number of FBT suggestions we ask the backend for
+	// (sized to fit the 4-up cart panel grid).
+	fbtPageSize = 4
 )
 
 func (fe *frontendServer) getCurrencies(ctx context.Context) ([]string, error) {
@@ -124,7 +128,7 @@ type fbtView struct {
 
 func (fe *frontendServer) getFrequentlyBoughtTogether(ctx context.Context, userID string, productIDs []string) ([]fbtView, error) {
 	resp, err := pb.NewRecommendationServiceClient(fe.recommendationSvcConn).ListFrequentlyBoughtTogether(ctx,
-		&pb.FBTRequest{UserId: userID, ProductIds: productIDs, MaxResults: 4})
+		&pb.FBTRequest{UserId: userID, ProductIds: productIDs, MaxResults: fbtPageSize})
 	if err != nil {
 		return nil, err
 	}
