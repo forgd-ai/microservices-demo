@@ -120,12 +120,17 @@ func (fe *frontendServer) getRecommendations(ctx context.Context, userID string,
 	return out, err
 }
 
+// fbtView is the per-card payload the cart template iterates over to render
+// a single Frequently Bought Together suggestion.
 type fbtView struct {
 	Item   *pb.Product
 	Reason string
 	Count  int32
 }
 
+// getFrequentlyBoughtTogether calls recommendationservice for FBT suggestions
+// for the given cart and hydrates each suggestion into a renderable fbtView
+// (full product details + reason + raw co-occurrence count).
 func (fe *frontendServer) getFrequentlyBoughtTogether(ctx context.Context, userID string, productIDs []string) ([]fbtView, error) {
 	resp, err := pb.NewRecommendationServiceClient(fe.recommendationSvcConn).ListFrequentlyBoughtTogether(ctx,
 		&pb.FBTRequest{UserId: userID, ProductIds: productIDs, MaxResults: fbtPageSize})
