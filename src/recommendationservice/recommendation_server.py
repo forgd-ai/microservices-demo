@@ -28,6 +28,7 @@ import grpc
 
 import demo_pb2
 import demo_pb2_grpc
+from fbt import compute_fbt
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
 
@@ -83,6 +84,20 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
         # build and return response
         response = demo_pb2.ListRecommendationsResponse()
         response.product_ids.extend(prod_list)
+        return response
+
+    def ListFrequentlyBoughtTogether(self, request, context):
+        def resolve_name(pid):
+            try:
+                return product_catalog_stub.GetProduct(demo_pb2.GetProductRequest(id=pid)).name
+            except grpc.RpcError:
+                return pid
+
+        items = compute_fbt(list(request.product_ids), request.max_results, resolve_name)
+        logger.info("[Recv ListFrequentlyBoughtTogether] cart={} returned={}".format(
+            list(request.product_ids), [i.product_id for i in items]))
+        response = demo_pb2.FBTResponse()
+        response.items.extend(items)
         return response
 
     def Check(self, request, context):
