@@ -87,6 +87,12 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
         return response
 
     def ListFrequentlyBoughtTogether(self, request, context):
+        """Return up to max_results FBT suggestions for the request's cart.
+
+        Blends two signals: the current cart contents and the user's recent
+        cart history (when available from cartservice). Each suggestion
+        includes a human-readable reason naming the top contributing seed.
+        """
         max_results = request.max_results if request.max_results > 0 else 4
         cart_ids = list(request.product_ids)
 
