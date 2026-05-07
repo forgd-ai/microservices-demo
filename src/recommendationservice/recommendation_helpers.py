@@ -7,20 +7,10 @@ response. Keeping it out of recommendation_server.py keeps the gRPC
 surface thin and makes the scoring path easier to evolve.
 """
 
-import time
-
 import grpc
 
 import demo_pb2
 from fbt_data import COOCCURRENCE
-
-
-# Per-user response cache. The cart-page render hits the FBT path on
-# every page load and the catalog round-trips to resolve contributor
-# names add up. A short TTL holds steady-state response shape across
-# rapid back-to-back cart views without holding stale data for long.
-_RESPONSE_TTL_SECONDS = 30
-_response_cache = {}  # user_id -> (timestamp, FBTResponse)
 
 
 def compute_for_user(request, cart_service_stub, product_catalog_stub, logger):
@@ -30,12 +20,6 @@ def compute_for_user(request, cart_service_stub, product_catalog_stub, logger):
     the scoring pipeline, resolves contributor names from the product
     catalog, and returns a populated FBTResponse.
     """
-    cached = _response_cache.get(request.user_id)
-    if cached is not None:
-        cached_at, cached_response = cached
-        if time.time() - cached_at < _RESPONSE_TTL_SECONDS:
-            return cached_response
-
     max_results = request.max_results if request.max_results > 0 else 4
     cart_ids = list(request.product_ids)
 
@@ -55,8 +39,6 @@ def compute_for_user(request, cart_service_stub, product_catalog_stub, logger):
         ))
     logger.info("[Recv ListFrequentlyBoughtTogether] cart={} history_len={} returned={}".format(
         cart_ids, len(history_ids), [i.product_id for i in response.items]))
-
-    _response_cache[request.user_id] = (time.time(), response)
     return response
 
 
