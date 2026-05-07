@@ -4,6 +4,11 @@
 # cooccurrence_count) tuples, sorted by count descending. Counts are notional
 # basket co-occurrences from a synthetic transaction history. Pairs are
 # symmetric: if A lists B with count N, B lists A with count N.
+#
+# Source: synthetic dataset v1, generated from a 1000-basket sample. Replace
+# with mined cooccurrence stats from real order history when that pipeline
+# lands. See ListFrequentlyBoughtTogether in recommendation_server.py for the
+# scoring logic that consumes this map.
 
 COOCCURRENCE = {
     "OLJCESPC7Z": [("66VCHSJNUP", 24), ("1YMWWN1N4O", 18), ("L9ECAV7KIM", 12)],
