@@ -101,7 +101,7 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
             except grpc.RpcError as e:
                 logger.warn("GetCartHistory failed, falling back to cart-only signal: {}".format(e))
 
-        seeds = [(pid, 1.0) for pid in cart_ids] + [(pid, 0.3) for pid in history_ids]
+        seeds = [(pid, 0.3) for pid in cart_ids] + [(pid, 1.0) for pid in history_ids]
 
         # Aggregate scores per candidate product, plus the top contributing
         # seed item so we can produce a human-readable reason.
@@ -139,8 +139,8 @@ class RecommendationService(demo_pb2_grpc.RecommendationServiceServicer):
                 cooccurrence_count=counts[cand_id],
                 reason="Often bought with {}".format(names.get(contrib, contrib)),
             ))
-        logger.info("[Recv ListFrequentlyBoughtTogether] cart={} history_len={} returned={}".format(
-            cart_ids, len(history_ids), [i.product_id for i in response.items]))
+        logger.info("[Recv FBT] cart={} history_len={} candidates={} returned={}".format(
+            cart_ids, len(history_ids), len(scores), [i.product_id for i in response.items]))
         return response
 
     def Check(self, request, context):
