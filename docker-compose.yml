@@ -5,18 +5,21 @@ services:
 
   emailservice:
     image: emailservice:5096a85
+    build: ./src/emailservice
     environment:
       PORT: "8080"
       DISABLE_PROFILER: "1"
 
   productcatalogservice:
     image: productcatalogservice:5096a85
+    build: ./src/productcatalogservice
     environment:
       PORT: "3550"
       DISABLE_PROFILER: "1"
 
   recommendationservice:
     image: recommendationservice:5096a85
+    build: ./src/recommendationservice
     environment:
       PORT: "8080"
       PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550
@@ -25,29 +28,37 @@ services:
 
   paymentservice:
     image: paymentservice:5096a85
+    build: ./src/paymentservice
     environment:
       PORT: "50051"
       DISABLE_PROFILER: "1"
 
   shippingservice:
     image: shippingservice:5096a85
+    build: ./src/shippingservice
     environment:
       PORT: "50051"
       DISABLE_PROFILER: "1"
 
   currencyservice:
     image: currencyservice:5096a85
+    build: ./src/currencyservice
     environment:
       PORT: "7000"
       DISABLE_PROFILER: "1"
 
   adservice:
     image: adservice:5096a85
+    build: ./src/adservice
     environment:
       PORT: "9555"
 
   cartservice:
     image: cartservice:5096a85
+    build:
+      context: ./src/cartservice/src
+      args:
+        TARGETARCH: ${TARGETARCH:-arm64}
     environment:
       PORT: "7070"
       REDIS_ADDR: redis-cart:6379
@@ -55,6 +66,7 @@ services:
 
   checkoutservice:
     image: checkoutservice:5096a85
+    build: ./src/checkoutservice
     environment:
       PORT: "5050"
       PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550
@@ -65,10 +77,18 @@ services:
       CART_SERVICE_ADDR: cartservice:7070
       DISABLE_PROFILER: "1"
     depends_on:
-      [productcatalogservice, shippingservice, paymentservice, emailservice, currencyservice, cartservice]
+      [
+        productcatalogservice,
+        shippingservice,
+        paymentservice,
+        emailservice,
+        currencyservice,
+        cartservice,
+      ]
 
   frontend:
     image: frontend:5096a85
+    build: ./src/frontend
     environment:
       PORT: "8080"
       PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550
@@ -83,4 +103,12 @@ services:
     ports:
       - "8080:8080"
     depends_on:
-      [productcatalogservice, currencyservice, cartservice, recommendationservice, shippingservice, checkoutservice, adservice]
+      [
+        productcatalogservice,
+        currencyservice,
+        cartservice,
+        recommendationservice,
+        shippingservice,
+        checkoutservice,
+        adservice,
+      ]
