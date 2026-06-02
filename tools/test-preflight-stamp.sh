@@ -36,6 +36,9 @@ mkdir -p "$repo"
 git -C "$repo" init -q
 git -C "$repo" config user.email "test@example.com"
 git -C "$repo" config user.name "preflight test"
+# Don't inherit a developer's global commit.gpgsign=true; signing has no place
+# in this throwaway repo and would fail non-interactively.
+git -C "$repo" config commit.gpgsign false
 git -C "$repo" commit -q --allow-empty -m "seed"
 
 ( cd "$repo" && bash "${work}/scripts/stamp-note.sh" PASS >/dev/null )
