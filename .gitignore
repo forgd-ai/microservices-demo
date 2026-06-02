@@ -27,7 +27,9 @@ pkg/
 release/wi-kubernetes-manifests.yaml
 vendor/
 
-# Preflight plugin tree, extracted from tools/preflight.tar.gz by
-# tools/install-preflight.sh. The marketplace manifest and settings.json that
-# register it are committed; only this generated tree is local.
-.claude/plugins/preflight/
+# Preflight is generated locally by tools/install-preflight.sh: the marketplace
+# manifest, the settings.json registration, and the extracted plugin tree. None
+# of it is committed, so a fresh clone exposes only the /install-preflight
+# command until a participant runs it (which is what unlocks /preflight).
+.claude/settings.json
+.claude/plugins/

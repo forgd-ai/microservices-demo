@@ -3,13 +3,7 @@ description: Install the bundled Preflight plugin into this project's .claude/ t
 ---
 
 Run the bundled installer to extract the Preflight plugin from `tools/preflight.tar.gz`
-into `.claude/plugins/preflight/`.
-
-The marketplace manifest (`.claude/plugins/.claude-plugin/marketplace.json`) and the
-registration in `.claude/settings.json` (`extraKnownMarketplaces.preflight-local` plus
-`enabledPlugins."preflight@preflight-local"`) are committed to the repo, so they are
-already present on checkout. The extracted plugin tree is gitignored and local, so it
-survives `git clean -ffd` and is the only thing the installer creates.
+into `.claude/plugins/preflight/` and register it in `.claude/settings.json`.
 
 Steps:
 
@@ -21,6 +15,10 @@ Steps:
 
    The script:
    - extracts the plugin tree into `.claude/plugins/preflight/`
+   - writes a project-local marketplace manifest to
+     `.claude/plugins/.claude-plugin/marketplace.json`
+   - registers that marketplace (`extraKnownMarketplaces.preflight-local`) and
+     enables `preflight@preflight-local` in `.claude/settings.json`
    - leaves `~/.claude/` untouched (project-local install)
 
 2. Surface the script's stdout to the user verbatim -- it lists what landed where
@@ -41,6 +39,6 @@ Steps:
 If `tools/preflight.tar.gz` is missing or `jq` is not installed, the script
 prints an actionable error and exits non-zero -- relay it to the user as-is.
 
-To remove Preflight afterwards: delete `.claude/plugins/preflight/`. To unregister
-it entirely, also remove the `preflight-local` and `preflight@preflight-local` keys
-from `.claude/settings.json` and delete `.claude/plugins/.claude-plugin/marketplace.json`.
+To remove Preflight afterwards: delete `.claude/plugins/` and remove the
+`preflight-local` and `preflight@preflight-local` keys from
+`.claude/settings.json`.
