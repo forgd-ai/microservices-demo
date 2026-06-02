@@ -1,0 +1,21 @@
+{
+  "name": "preflight-local",
+  "owner": {
+    "name": "forgd"
+  },
+  "metadata": {
+    "description": "Project-local marketplace for the bundled Preflight plugin",
+    "pluginRoot": "."
+  },
+  "plugins": [
+    {
+      "name": "preflight",
+      "source": "./preflight",
+      "description": "Gates git push behind automated quality checks with parallel diff triage and style review.",
+      "version": "0.1.0",
+      "author": {
+        "name": "forgd"
+      }
+    }
+  ]
+}
