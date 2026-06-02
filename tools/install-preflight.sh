@@ -74,8 +74,8 @@ JSON
 
 # Register the marketplace and enable the plugin in .claude/settings.json,
 # merging with whatever is already there so we don't clobber existing settings.
-# del(.enabledPlugins.preflight) clears the invalid entry written by older
-# versions of this installer.
+# del(.enabledPlugins.preflight) drops the bare "preflight" key; enabledPlugins
+# only accepts the "<plugin>@<marketplace>" form.
 mkdir -p "$(dirname "$SETTINGS")"
 if [[ ! -f "$SETTINGS" ]]; then
   echo '{}' > "$SETTINGS"
