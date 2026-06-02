@@ -26,10 +26,3 @@ obj/
 pkg/
 release/wi-kubernetes-manifests.yaml
 vendor/
-
-# Preflight is generated locally by tools/install-preflight.sh: the marketplace
-# manifest, the settings.json registration, and the extracted plugin tree. None
-# of it is committed, so a fresh clone exposes only the /install-preflight
-# command until a participant runs it (which is what unlocks /preflight).
-.claude/settings.json
-.claude/plugins/
