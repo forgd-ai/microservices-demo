@@ -19,6 +19,7 @@ FROM --platform=$BUILDPLATFORM public.ecr.aws/z8z1z1j0/workshop-base-images:gola
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
 ENV GOPROXY=https://goproxy.io,https://proxy.golang.org,direct
+ENV GODEBUG=http2client=0
 WORKDIR /src
 
 # restore dependencies
