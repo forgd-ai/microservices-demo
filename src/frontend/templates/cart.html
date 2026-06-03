@@ -92,7 +92,11 @@
 
                     <div class="row cart-summary-total-row">
                         <div class="col pl-md-0">Total</div>
-                        <div class="col pr-md-0 text-right">{{ renderMoney .total_cost }}</div>
+                        <div class="col pr-md-0 text-right"
+                             id="cart-total-display"
+                             data-units="{{ .total_cost.Units }}"
+                             data-nanos="{{ .total_cost.Nanos }}"
+                             data-currency="{{ .total_cost.CurrencyCode }}">{{ renderMoney .total_cost }}</div>
                     </div>
 
                 </div>
@@ -224,6 +228,33 @@
         {{ end }} <!-- end if $.items -->
 
     </main>
+
+    {{ if and (gt (len $.items) 0) $.fbt_recommendations }}
+    <section class="fbt-section container py-4">
+        <h4 class="mb-3">Frequently Bought Together</h4>
+        <div class="row">
+            {{ range $.fbt_recommendations }}
+            <div class="col-md-3 mb-3">
+                <div class="fbt-chip card h-100 p-2">
+                    <a href="{{ $.baseUrl }}/product/{{ .Product.Id }}">
+                        <img class="img-fluid mb-2" alt="{{ .Product.Name }}"
+                             src="{{ $.baseUrl }}{{ .Product.Picture }}">
+                    </a>
+                    <p class="mb-1 small"><strong>{{ .Product.Name }}</strong></p>
+                    <p class="text-muted mb-2" style="font-size:0.8em;">{{ .Reason }}</p>
+                    <button class="cymbal-button-secondary btn-sm fbt-add-btn mt-auto"
+                            data-product-id="{{ .Product.Id }}"
+                            data-price-units="{{ .Price.Units }}"
+                            data-price-nanos="{{ .Price.Nanos }}"
+                            data-currency="{{ .Price.CurrencyCode }}">
+                        + Add to Cart
+                    </button>
+                </div>
+            </div>
+            {{ end }}
+        </div>
+    </section>
+    {{ end }}
 
     {{ if $.recommendations }}
         {{ template "recommendations" $ }}

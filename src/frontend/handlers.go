@@ -232,7 +232,15 @@ func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Reques
 		renderHTTPError(log, r, w, errors.Wrap(err, "failed to add to cart"), http.StatusInternalServerError)
 		return
 	}
-	w.Header().Set("location", baseUrl + "/cart")
+
+	// FBT quick-add: return JSON cart size instead of redirect
+	if r.Header.Get("Accept") == "application/json" {
+		cart, _ := fe.getCart(r.Context(), sessionID(r))
+		w.Header().Set("Content-Type", "application/json")
+		fmt.Fprintf(w, `{"cart_size":%d}`, cartSize(cart))
+		return
+	}
+	w.Header().Set("location", baseUrl+"/cart")
 	w.WriteHeader(http.StatusFound)
 }
 
@@ -303,15 +311,45 @@ func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request
 	totalPrice = money.Must(money.Sum(totalPrice, *shippingCost))
 	year := time.Now().Year()
 
+	// Build FBT recommendations: add converted price and category-affinity reason label.
+	type fbtItemView struct {
+		Product *pb.Product
+		Price   *pb.Money
+		Reason  string
+	}
+	cartCats := map[string]bool{}
+	for _, item := range items {
+		for _, cat := range item.Item.GetCategories() {
+			cartCats[cat] = true
+		}
+	}
+	fbtRecs := make([]fbtItemView, 0, len(recommendations))
+	for _, prod := range recommendations {
+		convertedPrice, err := fe.convertCurrency(r.Context(), prod.GetPriceUsd(), currentCurrency(r))
+		if err != nil {
+			log.WithField("error", err).Warn("failed to convert FBT product price; falling back to USD")
+			convertedPrice = prod.GetPriceUsd()
+		}
+		reason := "You might also like"
+		for _, cat := range prod.GetCategories() {
+			if cartCats[cat] {
+				reason = "Popular in " + cat
+				break
+			}
+		}
+		fbtRecs = append(fbtRecs, fbtItemView{Product: prod, Price: convertedPrice, Reason: reason})
+	}
+
 	if err := templates.ExecuteTemplate(w, "cart", injectCommonTemplateData(r, map[string]interface{}{
-		"currencies":       currencies,
-		"recommendations":  recommendations,
-		"cart_size":        cartSize(cart),
-		"shipping_cost":    shippingCost,
-		"show_currency":    true,
-		"total_cost":       totalPrice,
-		"items":            items,
-		"expiration_years": []int{year, year + 1, year + 2, year + 3, year + 4},
+		"currencies":        currencies,
+		"recommendations":   recommendations,
+		"fbt_recommendations": fbtRecs,
+		"cart_size":         cartSize(cart),
+		"shipping_cost":     shippingCost,
+		"show_currency":     true,
+		"total_cost":        totalPrice,
+		"items":             items,
+		"expiration_years":  []int{year, year + 1, year + 2, year + 3, year + 4},
 	})); err != nil {
 		log.Println(err)
 	}
