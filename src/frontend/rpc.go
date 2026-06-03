@@ -64,6 +64,27 @@ func (fe *frontendServer) emptyCart(ctx context.Context, userID string) error {
 	return err
 }
 
+// removeCartItem removes a single product from the cart by emptying it and
+// re-inserting all other items. The cart gRPC service has no per-item remove.
+func (fe *frontendServer) removeCartItem(ctx context.Context, userID, productID string) error {
+	cart, err := fe.getCart(ctx, userID)
+	if err != nil {
+		return errors.Wrap(err, "could not get cart before remove")
+	}
+	if err := fe.emptyCart(ctx, userID); err != nil {
+		return errors.Wrap(err, "could not empty cart before remove")
+	}
+	for _, item := range cart {
+		if item.GetProductId() == productID {
+			continue
+		}
+		if err := fe.insertCart(ctx, userID, item.GetProductId(), item.GetQuantity()); err != nil {
+			return errors.Wrapf(err, "could not re-add product %s after remove", item.GetProductId())
+		}
+	}
+	return nil
+}
+
 func (fe *frontendServer) insertCart(ctx context.Context, userID, productID string, quantity int32) error {
 	_, err := pb.NewCartServiceClient(fe.cartSvcConn).AddItem(ctx, &pb.AddItemRequest{
 		UserId: userID,
