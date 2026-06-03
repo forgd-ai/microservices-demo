@@ -17,16 +17,18 @@ ARG BUILDPLATFORM=linux/amd64
 
 FROM --platform=$BUILDPLATFORM public.ecr.aws/z8z1z1j0/workshop-base-images:eclipse-temurin_24.0.2_12-jdk-noble AS builder
 
+ARG GRADLE_OPTS
+
 WORKDIR /app
 
 COPY ["build.gradle", "gradlew", "./"]
 COPY gradle gradle
 RUN chmod +x gradlew
-RUN ./gradlew downloadRepos
+RUN ./gradlew downloadRepos ${GRADLE_OPTS}
 
 COPY . .
 RUN chmod +x gradlew
-RUN ./gradlew installDist
+RUN ./gradlew installDist ${GRADLE_OPTS}
 
 FROM public.ecr.aws/z8z1z1j0/workshop-base-images:eclipse-temurin_25.0.2_10-jre-alpine
 
