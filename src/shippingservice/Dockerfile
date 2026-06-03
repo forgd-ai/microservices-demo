@@ -15,7 +15,7 @@
 # Define a default value so it's not empty if the builder fails to provide it
 ARG BUILDPLATFORM=linux/amd64
 
-FROM --platform=$BUILDPLATFORM public.ecr.aws/z8z1z1j0/workshop-base-images:golang_1.25-alpine AS builder
+FROM --platform=$BUILDPLATFORM public.ecr.aws/z8z1z1j0/workshop-base-images:golang_1.26.2-alpine AS builder
 ARG TARGETOS=linux
 ARG TARGETARCH=amd64
 ENV GOPROXY=https://goproxy.io,https://proxy.golang.org,direct
