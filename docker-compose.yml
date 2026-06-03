@@ -1,4 +1,12 @@
+# Default linux/arm64 (Apple Silicon). Intel: BUILD_PLATFORM=linux/amd64 TARGETARCH=amd64
+# or: ./scripts/compose-platform.sh > .env
 x-platform: &platform ${BUILD_PLATFORM:-linux/arm64}
+
+# Build args: override via .env, env.local.example, or --env-file env.corporate.example
+x-build-args: &build-args
+  BUILDPLATFORM: ${BUILD_PLATFORM:-linux/arm64}
+  TARGETARCH: ${TARGETARCH:-arm64}
+  GOPROXY: ${GOPROXY:-https://proxy.golang.org,direct}
 
 services:
   redis-cart:
@@ -13,6 +21,7 @@ services:
       context: ./src/emailservice
       platforms:
         - *platform
+      args: *build-args
     environment:
       PORT: "8080"
       DISABLE_PROFILER: "1"
@@ -24,6 +33,7 @@ services:
       context: ./src/productcatalogservice
       platforms:
         - *platform
+      args: *build-args
     environment:
       PORT: "3550"
       DISABLE_PROFILER: "1"
@@ -35,6 +45,7 @@ services:
       context: ./src/recommendationservice
       platforms:
         - *platform
+      args: *build-args
     environment:
       PORT: "8080"
       PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550
@@ -48,6 +59,7 @@ services:
       context: ./src/paymentservice
       platforms:
         - *platform
+      args: *build-args
     environment:
       PORT: "50051"
       DISABLE_PROFILER: "1"
@@ -59,6 +71,7 @@ services:
       context: ./src/shippingservice
       platforms:
         - *platform
+      args: *build-args
     environment:
       PORT: "50051"
       DISABLE_PROFILER: "1"
@@ -70,6 +83,7 @@ services:
       context: ./src/currencyservice
       platforms:
         - *platform
+      args: *build-args
     environment:
       PORT: "7000"
       DISABLE_PROFILER: "1"
@@ -81,6 +95,7 @@ services:
       context: ./src/adservice
       platforms:
         - *platform
+      args: *build-args
     environment:
       PORT: "9555"
 
@@ -91,8 +106,7 @@ services:
       context: ./src/cartservice/src
       platforms:
         - *platform
-      args:
-        TARGETARCH: ${TARGETARCH:-arm64}
+      args: *build-args
     environment:
       PORT: "7070"
       REDIS_ADDR: redis-cart:6379
@@ -105,6 +119,7 @@ services:
       context: ./src/checkoutservice
       platforms:
         - *platform
+      args: *build-args
     environment:
       PORT: "5050"
       PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550
@@ -123,6 +138,7 @@ services:
       context: ./src/frontend
       platforms:
         - *platform
+      args: *build-args
     environment:
       PORT: "8080"
       PRODUCT_CATALOG_SERVICE_ADDR: productcatalogservice:3550

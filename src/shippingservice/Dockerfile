@@ -12,13 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Define a default value so it's not empty if the builder fails to provide it
-ARG BUILDPLATFORM=linux/amd64
-
-FROM --platform=$BUILDPLATFORM public.ecr.aws/z8z1z1j0/workshop-base-images:golang_1.26.2-alpine AS builder
+FROM public.ecr.aws/z8z1z1j0/workshop-base-images:golang_1.26.2-alpine AS builder
 ARG TARGETOS=linux
-ARG TARGETARCH=amd64
-ENV GOPROXY=https://goproxy.io,https://proxy.golang.org,direct
+ARG TARGETARCH
+ARG GOPROXY
+ENV GOPROXY=${GOPROXY}
+ENV GODEBUG=http2client=0
 WORKDIR /src
 
 # restore dependencies
