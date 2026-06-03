@@ -233,11 +233,68 @@ func (fe *frontendServer) addToCartHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	// FBT quick-add: return JSON cart size instead of redirect
+	// FBT quick-add: return JSON instead of redirect so the client can update inline
 	if r.Header.Get("Accept") == "application/json" {
 		cart, _ := fe.getCart(r.Context(), sessionID(r))
+		var newQty int32
+		for _, item := range cart {
+			if item.GetProductId() == p.GetId() {
+				newQty = item.GetQuantity()
+				break
+			}
+		}
 		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprintf(w, `{"cart_size":%d}`, cartSize(cart))
+		resp := struct {
+			CartSize  int    `json:"cart_size"`
+			ProductID string `json:"product_id"`
+			Quantity  int32  `json:"quantity"`
+			Name      string `json:"name"`
+			Picture   string `json:"picture"`
+		}{
+			CartSize:  cartSize(cart),
+			ProductID: p.GetId(),
+			Quantity:  newQty,
+			Name:      p.GetName(),
+			Picture:   p.GetPicture(),
+		}
+		if err := json.NewEncoder(w).Encode(resp); err != nil {
+			log.WithField("error", err).Warn("failed to encode add-to-cart response")
+		}
+		log.WithField("fbt_quickadd", true).
+			WithField("product_id", p.GetId()).
+			WithField("new_quantity", newQty).
+			WithField("new_cart_size", resp.CartSize).
+			Info("fbt item added to cart")
+		return
+	}
+	w.Header().Set("location", baseUrl+"/cart")
+	w.WriteHeader(http.StatusFound)
+}
+
+func (fe *frontendServer) removeFromCartHandler(w http.ResponseWriter, r *http.Request) {
+	log := r.Context().Value(ctxKeyLog{}).(logrus.FieldLogger)
+	productID := r.FormValue("product_id")
+	if productID == "" {
+		renderHTTPError(log, r, w, errors.New("product_id is required"), http.StatusBadRequest)
+		return
+	}
+	if err := fe.removeCartItem(r.Context(), sessionID(r), productID); err != nil {
+		renderHTTPError(log, r, w, errors.Wrap(err, "could not remove item from cart"), http.StatusInternalServerError)
+		return
+	}
+	if r.Header.Get("Accept") == "application/json" {
+		cart, _ := fe.getCart(r.Context(), sessionID(r))
+		newSize := cartSize(cart)
+		w.Header().Set("Content-Type", "application/json")
+		if err := json.NewEncoder(w).Encode(struct {
+			CartSize int `json:"cart_size"`
+		}{CartSize: newSize}); err != nil {
+			log.WithField("error", err).Warn("failed to encode remove-from-cart response")
+		}
+		log.WithField("fbt_remove", true).
+			WithField("product_id", productID).
+			WithField("new_cart_size", newSize).
+			Info("cart item removed")
 		return
 	}
 	w.Header().Set("location", baseUrl+"/cart")
@@ -282,10 +339,17 @@ func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
+	type fbtItemView struct {
+		Product *pb.Product
+		Price   *pb.Money
+		Reason  string
+	}
+
 	type cartItemView struct {
 		Item     *pb.Product
 		Quantity int32
 		Price    *pb.Money
+		FBTRecs  []fbtItemView
 	}
 	items := make([]cartItemView, len(cart))
 	totalPrice := pb.Money{CurrencyCode: currentCurrency(r)}
@@ -311,45 +375,76 @@ func (fe *frontendServer) viewCartHandler(w http.ResponseWriter, r *http.Request
 	totalPrice = money.Must(money.Sum(totalPrice, *shippingCost))
 	year := time.Now().Year()
 
-	// Build FBT recommendations: add converted price and category-affinity reason label.
-	type fbtItemView struct {
-		Product *pb.Product
-		Price   *pb.Money
-		Reason  string
-	}
-	cartCats := map[string]bool{}
-	for _, item := range items {
-		for _, cat := range item.Item.GetCategories() {
-			cartCats[cat] = true
-		}
-	}
-	fbtRecs := make([]fbtItemView, 0, len(recommendations))
-	for _, prod := range recommendations {
-		convertedPrice, err := fe.convertCurrency(r.Context(), prod.GetPriceUsd(), currentCurrency(r))
-		if err != nil {
-			log.WithField("error", err).Warn("failed to convert FBT product price; falling back to USD")
-			convertedPrice = prod.GetPriceUsd()
-		}
-		reason := "You might also like"
-		for _, cat := range prod.GetCategories() {
-			if cartCats[cat] {
-				reason = "Popular in " + cat
-				break
+	// Assign each recommendation to the cart item it best matches by category affinity,
+	// then embed the resulting FBT chips directly on that cartItemView.
+	if len(items) > 0 && len(recommendations) > 0 {
+		recAssignment := make(map[string]string) // rec product ID → cart item product ID
+		for _, prod := range recommendations {
+			bestItemID := items[0].Item.GetId()
+			bestScore := -1
+			for _, item := range items {
+				score := 0
+				itemCats := map[string]bool{}
+				for _, c := range item.Item.GetCategories() {
+					itemCats[c] = true
+				}
+				for _, cat := range prod.GetCategories() {
+					if itemCats[cat] {
+						score++
+					}
+				}
+				if score > bestScore {
+					bestScore = score
+					bestItemID = item.Item.GetId()
+				}
 			}
+			recAssignment[prod.GetId()] = bestItemID
 		}
-		fbtRecs = append(fbtRecs, fbtItemView{Product: prod, Price: convertedPrice, Reason: reason})
+
+		fbtByItem := make(map[string][]fbtItemView)
+		for _, prod := range recommendations {
+			convertedPrice, err := fe.convertCurrency(r.Context(), prod.GetPriceUsd(), currentCurrency(r))
+			if err != nil {
+				log.WithField("error", err).Warn("failed to convert FBT product price; falling back to USD")
+				convertedPrice = prod.GetPriceUsd()
+			}
+			reason := "You might also like"
+			assignedID := recAssignment[prod.GetId()]
+			for _, item := range items {
+				if item.Item.GetId() == assignedID {
+					itemCats := map[string]bool{}
+					for _, c := range item.Item.GetCategories() {
+						itemCats[c] = true
+					}
+					for _, cat := range prod.GetCategories() {
+						if itemCats[cat] {
+							reason = "Popular in " + cat
+							break
+						}
+					}
+					break
+				}
+			}
+			fbtByItem[assignedID] = append(fbtByItem[assignedID], fbtItemView{
+				Product: prod,
+				Price:   convertedPrice,
+				Reason:  reason,
+			})
+		}
+		for i := range items {
+			items[i].FBTRecs = fbtByItem[items[i].Item.GetId()]
+		}
 	}
 
 	if err := templates.ExecuteTemplate(w, "cart", injectCommonTemplateData(r, map[string]interface{}{
-		"currencies":        currencies,
-		"recommendations":   recommendations,
-		"fbt_recommendations": fbtRecs,
-		"cart_size":         cartSize(cart),
-		"shipping_cost":     shippingCost,
-		"show_currency":     true,
-		"total_cost":        totalPrice,
-		"items":             items,
-		"expiration_years":  []int{year, year + 1, year + 2, year + 3, year + 4},
+		"currencies":       currencies,
+		"recommendations":  recommendations,
+		"cart_size":        cartSize(cart),
+		"shipping_cost":    shippingCost,
+		"show_currency":    true,
+		"total_cost":       totalPrice,
+		"items":            items,
+		"expiration_years": []int{year, year + 1, year + 2, year + 3, year + 4},
 	})); err != nil {
 		log.Println(err)
 	}

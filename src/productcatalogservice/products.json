@@ -107,6 +107,102 @@
                 "nanos": 990000000
             },
             "categories": ["kitchen"]
+        },
+        {
+            "id": "QDEHXFJTEL",
+            "name": "Silver Bracelet",
+            "description": "Delicate sterling silver chain bracelet — pairs beautifully with a watch.",
+            "picture": "/static/img/products/watch.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 44,
+                "nanos": 990000000
+            },
+            "categories": ["accessories", "jewelry"]
+        },
+        {
+            "id": "HQTGWGPNH4",
+            "name": "Cotton Hoodie",
+            "description": "Relaxed-fit heavyweight hoodie in a classic neutral tone.",
+            "picture": "/static/img/products/tank-top.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 49,
+                "nanos": 990000000
+            },
+            "categories": ["clothing", "tops"]
+        },
+        {
+            "id": "MVST3VS3FG",
+            "name": "Running Shoes",
+            "description": "Lightweight mesh trainers with cushioned soles for all-day comfort.",
+            "picture": "/static/img/products/loafers.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 89,
+                "nanos": 990000000
+            },
+            "categories": ["footwear", "sport"]
+        },
+        {
+            "id": "8LNPWN3JKW",
+            "name": "Face Serum",
+            "description": "Vitamin C brightening serum for a glowing complexion.",
+            "picture": "/static/img/products/hairdryer.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 34,
+                "nanos": 990000000
+            },
+            "categories": ["beauty", "skincare"]
+        },
+        {
+            "id": "4LQPWN8JFT",
+            "name": "Ceramic Teapot",
+            "description": "Hand-glazed teapot holds 32 oz — perfect for afternoon tea rituals.",
+            "picture": "/static/img/products/mug.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 32,
+                "nanos": 990000000
+            },
+            "categories": ["kitchen", "home"]
+        },
+        {
+            "id": "WKJZML7N2Q",
+            "name": "Silk Scarf",
+            "description": "100% mulberry silk scarf with a hand-rolled edge — wear it endless ways.",
+            "picture": "/static/img/products/sunglasses.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 54,
+                "nanos": 990000000
+            },
+            "categories": ["accessories", "clothing"]
+        },
+        {
+            "id": "P3RXPFJZS4",
+            "name": "Succulent Planter",
+            "description": "Minimalist concrete planter, ideal for succulents or air plants.",
+            "picture": "/static/img/products/candle-holder.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 19,
+                "nanos": 990000000
+            },
+            "categories": ["home", "decor"]
+        },
+        {
+            "id": "RZAMKTPP7N",
+            "name": "Bamboo Cutting Board",
+            "description": "Extra-large end-grain bamboo board with juice groove and non-slip feet.",
+            "picture": "/static/img/products/bamboo-glass-jar.jpg",
+            "priceUsd": {
+                "currencyCode": "USD",
+                "units": 27,
+                "nanos": 990000000
+            },
+            "categories": ["kitchen"]
         }
     ]
 }
