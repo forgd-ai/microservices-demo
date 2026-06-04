@@ -180,9 +180,23 @@ document.addEventListener('click', async (e) => {
                 <strong class="cart-item-price">${lineMoney}</strong>
               </div>
             </div>
+            <div class="row mt-1">
+              <div class="col">
+                <button class="cart-remove-btn"
+                        data-product-id="${product_id}"
+                        data-price-units="${priceUnits}"
+                        data-price-nanos="${priceNanos}"
+                        data-currency="${currency}"
+                        style="background:none;border:none;padding:0;color:#c0392b;font-size:0.8em;cursor:pointer;text-decoration:underline;">
+                  Remove
+                </button>
+              </div>
+            </div>
           </div>`;
         shippingRow.parentNode.insertBefore(newRow, shippingRow);
       }
+      // Reload so server can render FBT strips for the newly added item
+      setTimeout(() => location.reload(), 400);
     }
 
     // 4. Update cart total locally
