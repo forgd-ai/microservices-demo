@@ -12,12 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Define a default value so it's not empty if the builder fails to provide it
-ARG BUILDPLATFORM=linux/amd64
+# Run the builder on the host's native architecture (BuildKit populates
+# BUILDPLATFORM) and cross-compile to the requested target arch below.
+ARG BUILDPLATFORM
 
 FROM --platform=$BUILDPLATFORM public.ecr.aws/z8z1z1j0/workshop-base-images:golang_1.26.2-alpine AS builder
+# TARGETOS/TARGETARCH come from the build's target platform. Left without a
+# default so the binary matches the host (local) or the requested platform
+# (skaffold/prod), instead of being pinned to amd64.
 ARG TARGETOS=linux
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 # Module downloads go over HTTP first so TLS-intercepting proxies don't
 # break fetches; go.sum hashes verify module integrity regardless of
 # transport, and | falls back to the HTTPS proxies on any error
