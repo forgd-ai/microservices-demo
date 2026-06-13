@@ -1,4 +1,8 @@
-x-platform: &platform ${BUILD_PLATFORM:-linux/arm64}
+# Builds for the host's native architecture by default (empty platform = native),
+# so `docker compose up` produces native images on arm64 and amd64 hosts alike.
+# For prod-parity testing, set BUILD_PLATFORM (it feeds both the runtime platform
+# and build.platforms consistently), e.g. BUILD_PLATFORM=linux/amd64 docker compose build.
+x-platform: &platform ${BUILD_PLATFORM:-}
 
 services:
   redis-cart:
@@ -8,7 +12,7 @@ services:
     # for the Linux COW bug (e.g. WSL2); cart data is ephemeral
     command: ["redis-server", "--ignore-warnings", "ARM64-COW-BUG"]
 
-    platform: ${BUILD_PLATFORM:-linux/arm64}
+    platform: ${BUILD_PLATFORM:-}
   emailservice:
     image: emailservice:5096a85
     platform: *platform
