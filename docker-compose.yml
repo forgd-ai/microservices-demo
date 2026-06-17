@@ -128,7 +128,7 @@ services:
       ]
 
   frontend:
-    image: frontend:5096a85
+    image: frontend:bfc0c171
     platform: *platform
     build:
       context: ./src/frontend

@@ -39,7 +39,7 @@
 
                     <div class="row mb-3 py-2">
                         <div class="col-4 pl-md-0">
-                            <h3>Cart ({{ $.cart_size }})</h3>
+                            <h3 id="cart-heading">Cart ({{ $.cart_size }})</h3>
                         </div>
                         <div class="col-8 pr-md-0 text-right">
                             <form method="POST" action="{{ $.baseUrl }}/cart/empty">
@@ -54,7 +54,7 @@
                     </div>
 
                     {{ range $.items }}
-                    <div class="row cart-summary-item-row">
+                    <div class="row cart-summary-item-row" data-product-id="{{.Item.Id}}">
                         <div class="col-md-4 pl-md-0">
                             <a href="{{ $.baseUrl }}/product/{{.Item.Id}}">
                                 <img class="img-fluid" alt="" src="{{ $.baseUrl }}{{.Item.Picture}}" />
@@ -72,17 +72,54 @@
                                 </div>
                             </div>
                             <div class="row">
-                                <div class="col">
+                                <div class="col cart-item-quantity">
                                     Quantity: {{ .Quantity }}
                                 </div>
                                 <div class="col pr-md-0 text-right">
-                                    <strong>
+                                    <strong class="cart-item-price">
                                         {{ renderMoney .Price }}
                                     </strong>
                                 </div>
                             </div>
+                            <div class="row mt-1">
+                                <div class="col">
+                                    <button class="cart-remove-btn"
+                                            data-product-id="{{ .Item.Id }}"
+                                            data-price-units="{{ .Price.Units }}"
+                                            data-price-nanos="{{ .Price.Nanos }}"
+                                            data-currency="{{ .Price.CurrencyCode }}"
+                                            style="background:none;border:none;padding:0;color:#c0392b;font-size:0.8em;cursor:pointer;text-decoration:underline;">
+                                        Remove
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
+                    {{ if .FBTRecs }}
+                    <div class="fbt-inline-strip py-2 mb-2">
+                        <p class="fbt-inline-label mb-2">Frequently Bought Together</p>
+                        <div class="fbt-chips-row d-flex flex-row flex-wrap">
+                            {{ range .FBTRecs }}
+                            <div class="fbt-chip card p-2 mr-2 mb-2">
+                                <a href="{{ $.baseUrl }}/product/{{ .Product.Id }}">
+                                    <img class="img-fluid mb-1" alt="{{ .Product.Name }}"
+                                         src="{{ $.baseUrl }}{{ .Product.Picture }}"
+                                         style="height:70px;object-fit:cover;width:100%;">
+                                </a>
+                                <p class="mb-0" style="font-size:0.78em;"><strong>{{ .Product.Name }}</strong></p>
+                                <p class="text-muted mb-1" style="font-size:0.72em;">{{ .Reason }}</p>
+                                <button class="cymbal-button-secondary btn-sm fbt-add-btn mt-auto"
+                                        data-product-id="{{ .Product.Id }}"
+                                        data-price-units="{{ .Price.Units }}"
+                                        data-price-nanos="{{ .Price.Nanos }}"
+                                        data-currency="{{ .Price.CurrencyCode }}">
+                                    + Add
+                                </button>
+                            </div>
+                            {{ end }}
+                        </div>
+                    </div>
+                    {{ end }}
                     {{ end }}
 
                     <div class="row cart-summary-shipping-row">
@@ -92,7 +129,11 @@
 
                     <div class="row cart-summary-total-row">
                         <div class="col pl-md-0">Total</div>
-                        <div class="col pr-md-0 text-right">{{ renderMoney .total_cost }}</div>
+                        <div class="col pr-md-0 text-right"
+                             id="cart-total-display"
+                             data-units="{{ .total_cost.Units }}"
+                             data-nanos="{{ .total_cost.Nanos }}"
+                             data-currency="{{ .total_cost.CurrencyCode }}">{{ renderMoney .total_cost }}</div>
                     </div>
 
                 </div>
